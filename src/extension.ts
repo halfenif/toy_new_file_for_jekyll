@@ -27,21 +27,52 @@ export function activate(context: vscode.ExtensionContext) {
 		let strHour   = currentDate.getHours().toString().padStart(2, "0");
 		let strMinute   = currentDate.getMinutes().toString().padStart(2, "0");
 		let strSecond   = currentDate.getSeconds().toString().padStart(2, "0");
-		  
-		let fileName = `${strYear}-${strMonth}-${strDay}_${strHour}${strMinute}${strSecond}.md`;
-		let filePath = uri.fsPath + "/" + fileName;
+
+		let fileName = ``;
+		let baseName = ``;
+		let filePath = ``;		
+		let iFileCount = 1;
+		let sFileCount = ``;
+
+		while(iFileCount < 100) {
+
+			sFileCount = `${iFileCount}`.padStart(2,'0');
+			baseName = `${strYear}-${strMonth}-${strDay}-${sFileCount}`;
+			fileName = `${baseName}.markdown`;
+			filePath = uri.fsPath + "/" + fileName;
+			let fileUri = vscode.Uri.file(filePath);
+
+			try {
+				await vscode.workspace.fs.stat(fileUri);
+				iFileCount++;
+				continue;				
+			} catch {
+				break;
+			}			
+		}
+
+		if(iFileCount >= 100) {
+			vscode.window.showInformationMessage("Error. File Loop over 100");
+			return;
+		}
+
+
 
 		let strUUID = uuidv4();
 
-		let strBaseName = path.basename(uri.fsPath);
+		let strParent = path.basename(uri.fsPath);
+
+		
 
 		//-------------------------
 		let templateContent = `---
-layout: post
 title: 
-date: ${strYear}-${strMonth}-${strDay} ${strHour}:${strMinute}:${strSecond} +0900
-categories: ${strBaseName}
-tags: ${strBaseName}
+layout: post
+date: "${strYear}-${strMonth}-${strDay} ${strHour}:${strMinute}:${strSecond} +0900"
+categories:
+- ${strParent}
+tags:
+- ${strParent}
 description: 
 ---
 
@@ -49,7 +80,7 @@ description:
 [Link Name](https://url)
 
 # Image Sample
-| ![1](/assets/images/${strYear}-${strMonth}-${strDay}-01-01.png) |
+| ![1](/assets/images/${baseName}-01.png) |
 | :------------------------------------: |
 |   Image Desc.    |
 
